@@ -7,6 +7,7 @@ import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Point;
+import android.graphics.PorterDuff;
 import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.util.AttributeSet;
@@ -115,6 +116,8 @@ public class ImpressionistView extends View {
      */
     public void clearPainting(){
         //TODO
+        _offScreenCanvas.drawColor(Color.WHITE, PorterDuff.Mode.ADD);
+        invalidate();
     }
 
     @Override
@@ -122,7 +125,10 @@ public class ImpressionistView extends View {
         super.onDraw(canvas);
 
         if(_offScreenBitmap != null) {
+            Log.i("OnDraw", "Drew pixel");
             canvas.drawBitmap(_offScreenBitmap, 0, 0, _paint);
+        } else {
+            Log.i("OnDraw", "Specified pixel does not exist.");
         }
 
         // Draw the border. Helpful to see the size of the bitmap in the ImageView
@@ -137,33 +143,54 @@ public class ImpressionistView extends View {
         //touch locations correspond to the bitmap in the ImageView. You can then grab info about the bitmap--like the pixel color--
         //at that location
 
-        switch (motionEvent.getAction()) {
-            case MotionEvent.ACTION_DOWN:
-                Log.i("OnTouch", "Touched down");
-                if (_imageView.getDrawable() == null) {
-                    if (notLoaded.getView().isShown()) {
-                        return false;
+        int currX = (int)motionEvent.getX();
+        int currY = (int)motionEvent.getY();
+        Bitmap imageViewBitmap = _imageView.getDrawingCache();
+
+        try {
+            int colorAtTouchPixelInImage  = imageViewBitmap.getPixel(currX, currY);
+            switch (motionEvent.getAction()) {
+                case MotionEvent.ACTION_DOWN:
+                    _paint.setColor(colorAtTouchPixelInImage);
+                    _offScreenCanvas.drawCircle(currX, currY, _defaultRadius, _paint);
+                    break;
+                case MotionEvent.ACTION_MOVE:
+                    Log.i("OnTouch", "Touched down");
+                    if (_imageView.getDrawable() == null) {
+                        if (notLoaded.getView().isShown()) {
+                            return false;
+                        } else {
+                            notLoaded.show();
+                            return false;
+                        }
                     } else {
-                        notLoaded.show();
-                        return false;
+                        Log.i("OnTouch", "Image is loaded, proceed to draw impressionist");
+                        for (int idx = 0; idx < motionEvent.getHistorySize(); idx++) {
+                            float oldX = motionEvent.getHistoricalX(idx);
+                            float oldY = motionEvent.getHistoricalY(idx);
+
+                            int oldPixel = imageViewBitmap.getPixel((int)oldX, (int)oldY);
+                            _paint.setColor(colorAtTouchPixelInImage);
+                            _offScreenCanvas.drawCircle(currX, currY, _defaultRadius, _paint);
+//                            Log.i("OnTouch", "Set Pixel color " + colorAtTouchPixelInImage);
+
+                        }
+
                     }
-                }
-                Bitmap imageViewBitmap = _imageView.getDrawingCache();
-
-                int currX = (int)motionEvent.getX();
-                int currY = (int)motionEvent.getY();
-
-                int colorAtTouchPixelInImage = imageViewBitmap.getPixel(currX, currY);
-                _offScreenBitmap.setPixel(currX, currY, colorAtTouchPixelInImage);
-
-                _offScreenCanvas.drawBitmap(_offScreenBitmap, 0, 0, null);
-                break;
-            case MotionEvent.ACTION_UP:
-                break;
-            default:
-                Log.i("Default motion event", motionEvent.getAction() + "");
-                break;
+                    break;
+                case MotionEvent.ACTION_UP:
+                    break;
+                default:
+                    Log.i("Default motion event", motionEvent.getAction() + "");
+                    break;
+            }
+        } catch (Exception e) {
+            Log.i("OnTouch", e.getLocalizedMessage());
         }
+
+
+        invalidate();
+
         return true;
     }
 
