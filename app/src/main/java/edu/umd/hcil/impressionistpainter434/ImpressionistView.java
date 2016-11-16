@@ -14,6 +14,7 @@ import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.ImageView;
+import android.widget.Toast;
 
 import java.text.MessageFormat;
 import java.util.Random;
@@ -37,6 +38,8 @@ public class ImpressionistView extends View {
     private Paint _paintBorder = new Paint();
     private BrushType _brushType = BrushType.Square;
     private float _minBrushRadius = 5;
+
+    Toast notLoaded = Toast.makeText(getContext(), "Please load an image.", Toast.LENGTH_SHORT);
 
     public ImpressionistView(Context context) {
         super(context);
@@ -134,7 +137,33 @@ public class ImpressionistView extends View {
         //touch locations correspond to the bitmap in the ImageView. You can then grab info about the bitmap--like the pixel color--
         //at that location
 
+        switch (motionEvent.getAction()) {
+            case MotionEvent.ACTION_DOWN:
+                Log.i("OnTouch", "Touched down");
+                if (_imageView.getDrawable() == null) {
+                    if (notLoaded.getView().isShown()) {
+                        return false;
+                    } else {
+                        notLoaded.show();
+                        return false;
+                    }
+                }
+                Bitmap imageViewBitmap = _imageView.getDrawingCache();
 
+                int currX = (int)motionEvent.getX();
+                int currY = (int)motionEvent.getY();
+
+                int colorAtTouchPixelInImage = imageViewBitmap.getPixel(currX, currY);
+                _offScreenBitmap.setPixel(currX, currY, colorAtTouchPixelInImage);
+
+                _offScreenCanvas.drawBitmap(_offScreenBitmap, 0, 0, null);
+                break;
+            case MotionEvent.ACTION_UP:
+                break;
+            default:
+                Log.i("Default motion event", motionEvent.getAction() + "");
+                break;
+        }
         return true;
     }
 
