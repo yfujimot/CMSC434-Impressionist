@@ -152,7 +152,7 @@ public class ImpressionistView extends View {
             switch (motionEvent.getAction()) {
                 case MotionEvent.ACTION_DOWN:
                     _paint.setColor(colorAtTouchPixelInImage);
-                    _offScreenCanvas.drawCircle(currX, currY, _defaultRadius, _paint);
+                    draw(currX, currY);
                     break;
                 case MotionEvent.ACTION_MOVE:
                     Log.i("OnTouch", "Touched down");
@@ -171,7 +171,8 @@ public class ImpressionistView extends View {
 
                             int oldPixel = imageViewBitmap.getPixel((int)oldX, (int)oldY);
                             _paint.setColor(colorAtTouchPixelInImage);
-                            _offScreenCanvas.drawCircle(currX, currY, _defaultRadius, _paint);
+
+                            draw(currX, currY);
 //                            Log.i("OnTouch", "Set Pixel color " + colorAtTouchPixelInImage);
 
                         }
@@ -194,7 +195,31 @@ public class ImpressionistView extends View {
         return true;
     }
 
+    private void draw(float currX, float currY) {
+        switch(_brushType) {
+            case Square:
+                float left = currX - _defaultRadius;
+                float top = currY - _defaultRadius;
+                float right = currX + _defaultRadius;
+                float bottom = currY + _defaultRadius;
+                _offScreenCanvas.drawRect(left, top, right, bottom, _paint);
+                break;
+            case Circle:
+                _offScreenCanvas.drawCircle(currX, currY, _defaultRadius, _paint);
+                break;
+            case Line:
+                _offScreenCanvas.drawLine(currX, currY, currX + _defaultRadius, currY + _defaultRadius, _paint);
+                break;
+            case LineSplatter:
+                break;
+            case CircleSplatter:
+                break;
+            default:
+                _offScreenCanvas.drawCircle(currX, currY, _defaultRadius, _paint);
+                break;
 
+        }
+    }
 
 
     /**
