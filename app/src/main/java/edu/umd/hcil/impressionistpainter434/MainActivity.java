@@ -59,10 +59,35 @@ public class MainActivity extends AppCompatActivity implements OnMenuItemClickLi
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+
         _impressionistView = (ImpressionistView)findViewById(R.id.viewImpressionist);
         ImageView imageView = (ImageView)findViewById(R.id.viewImage);
         _impressionistView.setImageView(imageView);
 
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater inflater=getMenuInflater();
+        inflater.inflate(R.menu.menu, menu);
+        return super.onCreateOptionsMenu(menu);
+
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getTitle().toString()) {
+            case "Save Painting":
+                ImpressionistView painting = (ImpressionistView)findViewById(R.id.viewImpressionist);
+                Bitmap paintingImage = painting.getImageView();
+//                paintingImage.setDrawingCacheEnabled(true);
+//                Bitmap cache = paintingImage.getDrawingCache();
+                MediaStore.Images.Media.insertImage(getContentResolver(), paintingImage, "Impressionist Painting", "Masterpiece");
+                break;
+            default:
+                Log.i("Menu", item.getTitle().toString());
+        }
+        return super.onOptionsItemSelected(item);
     }
 
     public void onButtonClickClear(View v) {

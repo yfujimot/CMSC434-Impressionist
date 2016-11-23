@@ -10,9 +10,11 @@ import android.graphics.Point;
 import android.graphics.PorterDuff;
 import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
+import android.support.v4.view.VelocityTrackerCompat;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MotionEvent;
+import android.view.VelocityTracker;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.Toast;
@@ -39,6 +41,10 @@ public class ImpressionistView extends View {
     private Paint _paintBorder = new Paint();
     private BrushType _brushType = BrushType.Square;
     private float _minBrushRadius = 5;
+
+    private int speedMax = 0;
+
+    private VelocityTracker mVelocityTracker = null;
 
     Toast notLoaded = Toast.makeText(getContext(), "Please load an image.", Toast.LENGTH_SHORT);
 
@@ -125,14 +131,18 @@ public class ImpressionistView extends View {
         super.onDraw(canvas);
 
         if(_offScreenBitmap != null) {
-            Log.i("OnDraw", "Drew pixel");
+//            Log.i("OnDraw", "Drew pixel");
             canvas.drawBitmap(_offScreenBitmap, 0, 0, _paint);
         } else {
-            Log.i("OnDraw", "Specified pixel does not exist.");
+//            Log.i("OnDraw", "Specified pixel does not exist.");
         }
 
         // Draw the border. Helpful to see the size of the bitmap in the ImageView
         canvas.drawRect(getBitmapPositionInsideImageView(_imageView), _paintBorder);
+    }
+
+    public Bitmap getImageView() {
+        return this._offScreenBitmap;
     }
 
     @Override
@@ -145,16 +155,50 @@ public class ImpressionistView extends View {
 
         int currX = (int)motionEvent.getX();
         int currY = (int)motionEvent.getY();
+
+        int index = motionEvent.getActionIndex();
+        int action = motionEvent.getActionMasked();
+        int pointerId = motionEvent.getPointerId(index);
+
         Bitmap imageViewBitmap = _imageView.getDrawingCache();
 
         try {
             int colorAtTouchPixelInImage  = imageViewBitmap.getPixel(currX, currY);
             switch (motionEvent.getAction()) {
                 case MotionEvent.ACTION_DOWN:
+                    if(mVelocityTracker == null) {
+                        // Retrieve a new VelocityTracker object to watch the velocity of a motion.
+                        mVelocityTracker = VelocityTracker.obtain();
+                    }
+                    else {
+                        // Reset the velocity tracker back to its initial state.
+                        mVelocityTracker.clear();
+                    }
+
+                    mVelocityTracker.addMovement(motionEvent);
+
                     _paint.setColor(colorAtTouchPixelInImage);
-                    draw(currX, currY);
+                    draw(currX, currY, (int)_minBrushRadius);
                     break;
                 case MotionEvent.ACTION_MOVE:
+                    mVelocityTracker.addMovement(motionEvent);
+                    mVelocityTracker.computeCurrentVelocity(100);
+
+                    float speedX = (int)VelocityTrackerCompat.getXVelocity(mVelocityTracker, pointerId) ^ 2;
+                    float speedY = (int)VelocityTrackerCompat.getYVelocity(mVelocityTracker, pointerId) ^ 2;
+
+                    int currSpeed = (int) Math.sqrt(speedX + speedY);
+
+                    speedMax = Math.max(speedMax, currSpeed);
+
+                    float dynamicBrushSize = Math.max(currSpeed, _minBrushRadius);
+
+//                    dynamicBrushSize.
+//                    if (currSpeed  < _defaultRadius * 2) {
+//                        dynamicBrushSize = Math.max(dynamicBrushSize, currSpeed);
+//                    }
+
+                    Log.i("Size: ", dynamicBrushSize + "");
                     Log.i("OnTouch", "Touched down");
                     if (_imageView.getDrawable() == null) {
                         if (notLoaded.getView().isShown()) {
@@ -164,7 +208,7 @@ public class ImpressionistView extends View {
                             return false;
                         }
                     } else {
-                        Log.i("OnTouch", "Image is loaded, proceed to draw impressionist");
+//                        Log.i("OnTouch", "Image is loaded, proceed to draw impressionist");
                         for (int idx = 0; idx < motionEvent.getHistorySize(); idx++) {
                             float oldX = motionEvent.getHistoricalX(idx);
                             float oldY = motionEvent.getHistoricalY(idx);
@@ -172,21 +216,19 @@ public class ImpressionistView extends View {
                             int oldPixel = imageViewBitmap.getPixel((int)oldX, (int)oldY);
                             _paint.setColor(colorAtTouchPixelInImage);
 
-                            draw(currX, currY);
+                            draw(currX, currY, (int)dynamicBrushSize);
 //                            Log.i("OnTouch", "Set Pixel color " + colorAtTouchPixelInImage);
-
                         }
-
                     }
                     break;
                 case MotionEvent.ACTION_UP:
                     break;
                 default:
-                    Log.i("Default motion event", motionEvent.getAction() + "");
+//                    Log.i("Default motion event", motionEvent.getAction() + "");
                     break;
             }
         } catch (Exception e) {
-            Log.i("OnTouch", e.getLocalizedMessage());
+//            Log.i("OnTouch", e.getLocalizedMessage());
         }
 
 
@@ -195,27 +237,28 @@ public class ImpressionistView extends View {
         return true;
     }
 
-    private void draw(float currX, float currY) {
+    private void draw(float currX, float currY, int brushSize) {
         switch(_brushType) {
             case Square:
-                float left = currX - _defaultRadius;
-                float top = currY - _defaultRadius;
-                float right = currX + _defaultRadius;
-                float bottom = currY + _defaultRadius;
+                float left = currX - brushSize;
+                float top = currY - brushSize;
+                float right = currX + brushSize;
+                float bottom = currY + brushSize;
                 _offScreenCanvas.drawRect(left, top, right, bottom, _paint);
                 break;
             case Circle:
-                _offScreenCanvas.drawCircle(currX, currY, _defaultRadius, _paint);
+                _offScreenCanvas.drawCircle(currX, currY, brushSize, _paint);
                 break;
             case Line:
-                _offScreenCanvas.drawLine(currX, currY, currX + _defaultRadius, currY + _defaultRadius, _paint);
+                _offScreenCanvas.drawLine(currX, currY, currX + brushSize, currY + brushSize, _paint);
                 break;
             case LineSplatter:
+
                 break;
             case CircleSplatter:
                 break;
             default:
-                _offScreenCanvas.drawCircle(currX, currY, _defaultRadius, _paint);
+                _offScreenCanvas.drawCircle(currX, currY, brushSize, _paint);
                 break;
 
         }
