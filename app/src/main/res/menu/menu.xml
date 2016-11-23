@@ -4,5 +4,5 @@
 
     <item android:title="Save Painting"
         android:id="@+id/saveButton" />
-    <item android:title="Item" />
+    <item android:title="Invert Mode" />
 </menu>

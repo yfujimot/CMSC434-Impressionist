@@ -145,6 +145,16 @@ public class ImpressionistView extends View {
         return this._offScreenBitmap;
     }
 
+    public void invertImage() {
+        for (int x = 0; x < this._offScreenBitmap.getWidth(); x++) {
+            for (int y = 0; y < this._offScreenBitmap.getHeight(); y++) {
+                int origColor = this._offScreenBitmap.getPixel(x, y);
+                int newColor = (origColor & 0xFF000000) | (~origColor & 0x00FFFFFF);
+                this._offScreenBitmap.setPixel(x, y, newColor);
+            }
+        }
+    }
+
     @Override
     public boolean onTouchEvent(MotionEvent motionEvent){
 

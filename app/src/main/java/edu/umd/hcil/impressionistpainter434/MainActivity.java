@@ -71,18 +71,20 @@ public class MainActivity extends AppCompatActivity implements OnMenuItemClickLi
         MenuInflater inflater=getMenuInflater();
         inflater.inflate(R.menu.menu, menu);
         return super.onCreateOptionsMenu(menu);
-
     }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
+        ImpressionistView painting = (ImpressionistView)findViewById(R.id.viewImpressionist);
         switch (item.getTitle().toString()) {
             case "Save Painting":
-                ImpressionistView painting = (ImpressionistView)findViewById(R.id.viewImpressionist);
                 Bitmap paintingImage = painting.getImageView();
 //                paintingImage.setDrawingCacheEnabled(true);
 //                Bitmap cache = paintingImage.getDrawingCache();
                 MediaStore.Images.Media.insertImage(getContentResolver(), paintingImage, "Impressionist Painting", "Masterpiece");
+                break;
+            case "Invert Mode":
+                painting.invertImage();
                 break;
             default:
                 Log.i("Menu", item.getTitle().toString());
