@@ -26,6 +26,8 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 
+import static java.security.AccessController.getContext;
+
 public class MainActivity extends AppCompatActivity implements OnMenuItemClickListener {
 
     private static int RESULT_LOAD_IMAGE = 1;
@@ -82,6 +84,7 @@ public class MainActivity extends AppCompatActivity implements OnMenuItemClickLi
 //                paintingImage.setDrawingCacheEnabled(true);
 //                Bitmap cache = paintingImage.getDrawingCache();
                 MediaStore.Images.Media.insertImage(getContentResolver(), paintingImage, "Impressionist Painting", "Masterpiece");
+                Toast.makeText(MainActivity.this, "Your painting has been saved.", Toast.LENGTH_SHORT).show();
                 break;
             case "Invert Mode":
                 painting.invertImage();

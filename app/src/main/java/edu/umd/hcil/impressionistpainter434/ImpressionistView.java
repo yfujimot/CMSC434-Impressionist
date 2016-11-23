@@ -153,6 +153,7 @@ public class ImpressionistView extends View {
                 this._offScreenBitmap.setPixel(x, y, newColor);
             }
         }
+        Toast.makeText(getContext(), "Inversion complete.", Toast.LENGTH_SHORT).show();
     }
 
     @Override
